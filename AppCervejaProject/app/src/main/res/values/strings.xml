@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name"> </string>
+    <string name="title_lista_cesta_activity"> Lista de Cestas</string>
+    <string name="title_activity_lista_detalhes_cesta">ListaDetalhesCestaActivity</string>
+</resources>
