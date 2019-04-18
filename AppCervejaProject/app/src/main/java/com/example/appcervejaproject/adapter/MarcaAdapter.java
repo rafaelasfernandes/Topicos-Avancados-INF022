@@ -32,7 +32,7 @@ public class MarcaAdapter extends BaseAdapter{
 
     @Override
     public long getItemId(int position) {
-        return marcas.get(position).getId_marca();
+        return position;
     }
 
     @Override

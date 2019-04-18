@@ -4,15 +4,15 @@ import java.io.Serializable;
 
 public class Marca implements Serializable {
 
-    private Integer id_marca;
+    private Integer id;
     private String nome;
 
     public Integer getId_marca(){
-        return this.id_marca;
+        return this.id;
     }
 
-    public void setId_marca(Integer id_marca){
-        this.id_marca = id_marca;
+    public void setId_marca(Integer id){
+        this.id = id;
     }
 
     public String getNome(){

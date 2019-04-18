@@ -33,7 +33,7 @@ public class DetalhesCestaAdapter extends BaseAdapter {
 
     @Override
     public long getItemId(int position) {
-        return cervejas.get(position).getId_cerveja();
+        return position;
     }
 
     @Override

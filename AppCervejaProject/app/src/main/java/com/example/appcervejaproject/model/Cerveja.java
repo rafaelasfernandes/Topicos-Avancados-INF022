@@ -4,18 +4,18 @@ import java.io.Serializable;
 
 public class Cerveja implements Serializable {
 
-    private Integer id_cerveja;
+    private Integer id;
     private String estabelecimento;
     private String marca;
     private String tipo;
     private float valor;
 
     public Integer getId_cerveja(){
-        return this.id_cerveja;
+        return this.id;
     }
 
-    public void setId_cerveja(Integer id_cerveja){
-        this.id_cerveja = id_cerveja;
+    public void setId_cerveja(Integer id){
+        this.id = id;
     }
 
     public String getEstabelecimento(){

@@ -33,7 +33,7 @@ public class EstabelecimentoAdapter extends BaseAdapter {
 
     @Override
     public long getItemId(int position) {
-        return estabelecimentos.get(position).getId_estabelecimento();
+        return position;
     }
 
     @Override

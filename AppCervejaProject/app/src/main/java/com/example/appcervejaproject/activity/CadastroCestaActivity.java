@@ -1,21 +1,31 @@
 package com.example.appcervejaproject.activity;
 
+
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+
+import android.util.Log;
 import android.view.View;
-import android.widget.Button;
+
 import android.widget.EditText;
 
-import com.example.appcervejaproject.DAO.CestaDAO;
+import android.widget.Toast;
+
+
 import com.example.appcervejaproject.R;
 import com.example.appcervejaproject.model.Cesta;
+import com.example.appcervejaproject.rest.CestaService;
+import com.example.appcervejaproject.rest.ServiceGenerator;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class CadastroCestaActivity extends AppCompatActivity {
 
     private EditText nome; /*atributos associados com os campos de EditText*/
     private EditText data;
-    private CestaDAO cestaDao; /*atributo do tipo cestaDAO*/
     private Cesta cesta;
 
     @Override
@@ -29,7 +39,6 @@ public class CadastroCestaActivity extends AppCompatActivity {
 
         nome = findViewById(R.id.editText_NomeCesta); /*associa o xml com os atributos do java*/
         data = findViewById(R.id.editText_Data);
-        cestaDao = new CestaDAO(this);
 
         Intent intent = getIntent();
         if(intent.hasExtra("cesta")){
@@ -45,21 +54,57 @@ public class CadastroCestaActivity extends AppCompatActivity {
         finish();
     }
 
-
     public void cadastrar(View view){
 
-        if(cesta == null) {
-            Cesta cesta = new Cesta(); /*criando um objeto cesta*/
+        CestaService cestaService = ServiceGenerator.createService(CestaService.class);
+        Call<Cesta> call;
+        final String mensagem;
+        if(cesta == null){
+            cesta = new Cesta(); /*criando um objeto cesta*/
             cesta.setNome(nome.getText().toString()); /*preenche os campos de cesta com os valores de EditText*/
             cesta.setData(data.getText().toString());
-            cestaDao.inserir(cesta); /*insere a cesta no banco*/
+            call = cestaService.insereCesta(cesta);
+            mensagem = "inserida";
         }
         else{
             cesta.setNome(nome.getText().toString());
             cesta.setData(data.getText().toString());
-            cestaDao.atualizar(cesta);
+            call = cestaService.atualizaCesta(cesta.getId_cesta(), cesta);
+            mensagem = "atualizada";
         }
-            Intent intent = new Intent(CadastroCestaActivity.this, ListaCestaActivity.class);
-            startActivity(intent);
+        call.enqueue(new Callback<Cesta>() {
+            @Override
+            public void onResponse(Call<Cesta> call, Response<Cesta> response) {
+                if(response.isSuccessful())
+                    Toast.makeText(getBaseContext(), "Cesta " + mensagem +  " com sucesso!", Toast.LENGTH_SHORT).show();
+                }
+
+            @Override
+            public void onFailure(Call<Cesta> call, Throwable t) {
+                Log.e("ERROR ", t.getMessage());
+            }
+        });
+        Intent intent = new Intent(CadastroCestaActivity.this, ListaCestaActivity.class);
+        startActivity(intent);
+    }
+
+    public void excluir(View view){
+        CestaService cestaService = ServiceGenerator.createService(CestaService.class);
+        Call<Cesta> call = cestaService.excluiCesta(cesta.getId_cesta());
+        call.enqueue(new Callback<Cesta>() {
+            @Override
+            public void onResponse(Call<Cesta> call, Response<Cesta> response) {
+                if(response.isSuccessful()){
+                    Toast.makeText(getBaseContext(), "Cesta excluída com sucesso!", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Cesta> call, Throwable t) {
+                Log.e("ERRO ", t.getMessage());
+            }
+        });
+        Intent intent = new Intent(CadastroCestaActivity.this, ListaCestaActivity.class);
+        startActivity(intent);
     }
 }

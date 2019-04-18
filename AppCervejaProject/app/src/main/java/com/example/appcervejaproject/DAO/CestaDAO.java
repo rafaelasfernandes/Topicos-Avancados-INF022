@@ -27,17 +27,17 @@ public class CestaDAO {
         values.put("data", cesta.getData());
         return banco.insert("cesta", null, values); /*insere no banco/retorna o id cadastrado*/
     }
-
+/*
     public void excluir(Cesta cesta){
         banco.delete("cesta", "id_cesta = ?", new String[]{cesta.getId_cesta().toString()});
     }
 
     public void atualizar(Cesta cesta){
         ContentValues values = new ContentValues();/*valores que eu vou atualizar na tabela cesta*/
-        values.put("nome", cesta.getNome());  /*coloca valores put dentro das variaveis values*/
-        values.put("data", cesta.getData());
+       /* values.put("nome", cesta.getNome());  /*coloca valores put dentro das variaveis values*/
+    /*    values.put("data", cesta.getData());
         banco.update("cesta", values, "id_cesta = ?", new String[]{cesta.getId_cesta().toString()}); /*atualiza no banco/*/
-    }
+   // }
 
     /*método pra consultar do banco de dados*/
     public List<Cesta> listarCestas(){

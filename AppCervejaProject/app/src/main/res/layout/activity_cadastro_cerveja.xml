@@ -91,8 +91,8 @@
         android:id="@+id/btn_CadastroGeral"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginLeft="8dp"
+        android:layout_marginStart="128dp"
+        android:layout_marginLeft="128dp"
         android:layout_marginTop="32dp"
         android:layout_marginEnd="8dp"
         android:layout_marginRight="8dp"
@@ -117,7 +117,7 @@
         android:layout_marginEnd="8dp"
         android:layout_marginRight="8dp"
         android:background="#d562fe"
-        android:onClick= "sair"
+        android:onClick="sair"
         android:text="Sair"
         android:textColor="#dddddd"
         android:textSize="18sp"
@@ -127,5 +127,22 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btn_CadastroGeral"
         tools:ignore="OnClick" />
+
+    <Button
+        android:id="@+id/btn_ExcluirCerveja"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginBottom="8dp"
+        android:onClick="excluir"
+        android:text="Excluir"
+        app:layout_constraintBottom_toTopOf="@+id/btn_SairCadastroGeral"
+        app:layout_constraintEnd_toStartOf="@+id/btn_CadastroGeral"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editText_Preco" />
 
 </android.support.constraint.ConstraintLayout>

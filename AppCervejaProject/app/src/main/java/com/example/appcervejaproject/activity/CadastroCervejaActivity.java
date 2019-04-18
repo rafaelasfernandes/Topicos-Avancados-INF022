@@ -3,7 +3,7 @@ package com.example.appcervejaproject.activity;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.Gravity;
+import android.util.Log;
 import android.view.View;
 
 import android.widget.AutoCompleteTextView;
@@ -11,16 +11,17 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.appcervejaproject.DAO.CervejaDAO;
 
-import com.example.appcervejaproject.DAO.EstabelecimentoDAO;
 import com.example.appcervejaproject.R;
 
-import com.example.appcervejaproject.adapter.EstabelecimentoAdapter;
 import com.example.appcervejaproject.model.Cerveja;
-import com.example.appcervejaproject.model.Estabelecimento;
+import com.example.appcervejaproject.rest.CervejaService;
+import com.example.appcervejaproject.rest.ServiceGenerator;
 
-import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 
 public class CadastroCervejaActivity extends AppCompatActivity {
@@ -30,7 +31,6 @@ public class CadastroCervejaActivity extends AppCompatActivity {
     private AutoCompleteTextView marca;
     private AutoCompleteTextView tipo;
     private EditText valor;
-    private CervejaDAO cervejaDao;
     private Cerveja cerveja;
 
     @Override
@@ -47,7 +47,6 @@ public class CadastroCervejaActivity extends AppCompatActivity {
         marca = findViewById(R.id.autoComplete_Marca);
         tipo = findViewById(R.id.autoComplete_Tipo);
         valor = findViewById(R.id.editText_Preco);
-        cervejaDao = new CervejaDAO(this);
 
         Intent intent = getIntent();
         if(intent.hasExtra("cerveja")){
@@ -63,14 +62,18 @@ public class CadastroCervejaActivity extends AppCompatActivity {
 
     public void cadastrar(View view){
 
-        if (cerveja == null) {
-            Cerveja cerveja = new Cerveja();
+        CervejaService cervejaService = ServiceGenerator.createService(CervejaService.class);
+        Call<Cerveja> call;
+        final String mensagem;
+        if(cerveja == null){
+            cerveja = new Cerveja();
             cerveja.setEstabelecimento(estabelecimento.getText().toString());
             cerveja.setMarca(marca.getText().toString());
             cerveja.setTipo(tipo.getText().toString());
             float val = Float.valueOf(valor.getText().toString());
             cerveja.setValor(val);
-            cervejaDao.inserir(cerveja);
+            call = cervejaService.insereCerveja(cerveja);
+            mensagem = "inserida";
         }
         else{
             cerveja.setEstabelecimento(estabelecimento.getText().toString());
@@ -78,11 +81,42 @@ public class CadastroCervejaActivity extends AppCompatActivity {
             cerveja.setTipo(tipo.getText().toString());
             float val = Float.valueOf(valor.getText().toString());
             cerveja.setValor(val);
-            cervejaDao.atualizar(cerveja);
+            call = cervejaService.atualizaCerveja(cerveja.getId_cerveja(), cerveja);
+            mensagem = "atualizada";
         }
-        Toast toast = Toast.makeText(this, "Cerveja cadastrada com sucesso!", Toast.LENGTH_SHORT);
-        toast.setGravity(Gravity.CENTER_HORIZONTAL, 0, 0);
-        toast.show();
+        call.enqueue(new Callback<Cerveja>() {
+            @Override
+            public void onResponse(Call<Cerveja> call, Response<Cerveja> response) {
+                if(response.isSuccessful()){
+                    Toast.makeText(getBaseContext(), "Cerveja " + mensagem +  " com sucesso!", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Cerveja> call, Throwable t) {
+                Log.e("ERROR ", t.getMessage());
+            }
+        });
+    }
+
+    public void excluir(View view){
+        CervejaService cervejaService = ServiceGenerator.createService(CervejaService.class);
+        Call<Cerveja> call = cervejaService.excluiCerveja(cerveja.getId_cerveja());
+        call.enqueue(new Callback<Cerveja>() {
+            @Override
+            public void onResponse(Call<Cerveja> call, Response<Cerveja> response) {
+                if(response.isSuccessful()){
+                    Toast.makeText(getBaseContext(), "Cerveja excluída com sucesso!", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Cerveja> call, Throwable t) {
+                Log.e("ERRO ", t.getMessage());
+            }
+        });
+        Intent intent = new Intent(CadastroCervejaActivity.this, ListaDetalhesCestaActivity.class);
+        startActivity(intent);
     }
 
     public void sair(View view){

@@ -1,13 +1,14 @@
 package com.example.appcervejaproject.activity;
 
-import android.content.DialogInterface;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.v7.app.AlertDialog;
+
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -17,18 +18,22 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SearchView;
 
-import com.example.appcervejaproject.DAO.CervejaDAO;
 import com.example.appcervejaproject.R;
 import com.example.appcervejaproject.adapter.DetalhesCestaAdapter;
 import com.example.appcervejaproject.model.Cerveja;
+import com.example.appcervejaproject.rest.CervejaService;
+import com.example.appcervejaproject.rest.ServiceGenerator;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class ListaDetalhesCestaActivity extends AppCompatActivity {
 
     private ListView listView;
-    private CervejaDAO cervejaDao;
     private List<Cerveja> cervejas;
     private List<Cerveja> cervejasFiltradas = new ArrayList<>();
 
@@ -43,12 +48,25 @@ public class ListaDetalhesCestaActivity extends AppCompatActivity {
         getSupportActionBar().setTitle(" Detalhes da Cesta");
 
         listView = findViewById(R.id.listview_DetalhesCesta);
-        cervejaDao = new CervejaDAO(this);
-        cervejas = cervejaDao.listarCervejas();
-        cervejasFiltradas.addAll(cervejas);
 
-        DetalhesCestaAdapter adaptador = new DetalhesCestaAdapter(this, cervejasFiltradas);
-        listView.setAdapter(adaptador);
+        CervejaService cervejaService = ServiceGenerator.createService(CervejaService.class);
+        Call<List<Cerveja>> call = cervejaService.getCervejas();
+
+        call.enqueue(new Callback<List<Cerveja>>() {
+            @Override
+            public void onResponse(Call<List<Cerveja>> call, Response<List<Cerveja>> response) {
+                if(response.isSuccessful()){
+                    cervejasFiltradas = response.body();
+                    DetalhesCestaAdapter adaptador = new DetalhesCestaAdapter(ListaDetalhesCestaActivity.this, cervejasFiltradas);
+                    listView.setAdapter(adaptador);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Cerveja>> call, Throwable t) {
+                Log.e("ERRO ", t.getMessage());
+            }
+        });
 
         registerForContextMenu(listView);
 
@@ -100,29 +118,22 @@ public class ListaDetalhesCestaActivity extends AppCompatActivity {
 
     public void excluirCerveja(MenuItem item){
         AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-        final Cerveja cervejaExcluir = cervejasFiltradas.get(menuInfo.position);
 
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Atenção")
-                .setMessage("Realmente deseja excluir a cerveja?")
-                .setNegativeButton("NÃO", null)
-                .setPositiveButton("SIM", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        cervejasFiltradas.remove(cervejaExcluir);
-                        cervejas.remove(cervejaExcluir);
-                        cervejaDao.excluir(cervejaExcluir);
-                        listView.invalidateViews();
-                    }
-                }).create();
-        dialog.show();
+        final Cerveja cervejaExcluir = cervejasFiltradas.get(menuInfo.position);
+        Intent intent = new Intent(this, CadastroCervejaActivity.class);
+        intent.putExtra("cerveja", cervejaExcluir);
+
+        startActivity(intent);
+
     }
 
     public void atualizarCerveja(MenuItem item){
         AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+
         final Cerveja cervejaAtualizar = cervejasFiltradas.get(menuInfo.position);
-        Intent intent = new Intent(this, CadastroTipoActivity.class);
+        Intent intent = new Intent(this, CadastroCervejaActivity.class);
         intent.putExtra("cerveja", cervejaAtualizar);
+
         startActivity(intent);
     }
 
@@ -135,14 +146,4 @@ public class ListaDetalhesCestaActivity extends AppCompatActivity {
         }
         listView.invalidateViews();
     }
-
-    @Override
-    public void onResume(){
-        super.onResume();
-        cervejas = cervejaDao.listarCervejas();
-        cervejasFiltradas.clear();
-        cervejasFiltradas.addAll(cervejas);
-        listView.invalidateViews();
-    }
-
 }

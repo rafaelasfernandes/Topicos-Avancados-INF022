@@ -1,12 +1,13 @@
 package com.example.appcervejaproject.activity;
 
-import android.content.DialogInterface;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v7.app.AlertDialog;
+
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -20,17 +21,23 @@ import com.example.appcervejaproject.DAO.EstabelecimentoDAO;
 import com.example.appcervejaproject.R;
 import com.example.appcervejaproject.adapter.EstabelecimentoAdapter;
 import com.example.appcervejaproject.model.Estabelecimento;
+import com.example.appcervejaproject.rest.EstabelecimentoService;
+import com.example.appcervejaproject.rest.ServiceGenerator;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class ListaEstabelecimentoActivity extends AppCompatActivity {
 
     private ListView listView;
-    private EstabelecimentoDAO estabelecimentoDao;
     private List<Estabelecimento> estabelecimentos;
     private List<Estabelecimento> estabelecimentosFiltrados = new ArrayList<>();
+    EstabelecimentoService estabelecimentoService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,12 +52,25 @@ public class ListaEstabelecimentoActivity extends AppCompatActivity {
 
 
         listView = findViewById(R.id.listview_Estabelecimento);
-        estabelecimentoDao = new EstabelecimentoDAO(this);
-        estabelecimentos = estabelecimentoDao.listarEstabelecimentos();
-        estabelecimentosFiltrados.addAll(estabelecimentos);
 
-        EstabelecimentoAdapter adaptador = new EstabelecimentoAdapter(this,estabelecimentosFiltrados);
-        listView.setAdapter(adaptador);
+        estabelecimentoService = ServiceGenerator.createService(EstabelecimentoService.class);
+        Call<List<Estabelecimento>> call = estabelecimentoService.getEstabelecimentos();
+
+        call.enqueue(new Callback<List<Estabelecimento>>() {
+            @Override
+            public void onResponse(Call<List<Estabelecimento>> call, Response<List<Estabelecimento>> response) {
+                if (response.isSuccessful()) {
+                    estabelecimentosFiltrados = response.body();
+                    EstabelecimentoAdapter adaptador = new EstabelecimentoAdapter(ListaEstabelecimentoActivity.this, estabelecimentosFiltrados);
+                    listView.setAdapter(adaptador);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Estabelecimento>> call, Throwable t) {
+                Log.e("ERROR ", t.getMessage());
+            }
+        });
 
         registerForContextMenu(listView);
 
@@ -63,25 +83,14 @@ public class ListaEstabelecimentoActivity extends AppCompatActivity {
             }
         });
     }
-/*
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                startActivity(new Intent(this, ListaCestaActivity.class));
-                finish();
-                break;
-            default:break;
-        }
-        return true;
-    }*/
 
     @Override
-    public void onBackPressed(){
+    public void onBackPressed() {
         startActivity(new Intent(this, ListaCestaActivity.class));
         finish();
     }
 
-    public boolean onCreateOptionsMenu(Menu menu){
+    public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater menuInflater = getMenuInflater();
         menuInflater.inflate(R.menu.menu_principal_estabelecimento, menu);
 
@@ -101,58 +110,40 @@ public class ListaEstabelecimentoActivity extends AppCompatActivity {
         return true;
     }
 
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo){
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
         MenuInflater menuInflater = getMenuInflater();
         menuInflater.inflate(R.menu.menu_contexto_estabelecimento, menu);
     }
 
-    public void excluir(MenuItem item){
+    public void excluir(MenuItem item) {
         AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
 
         final Estabelecimento estabelecimentoExcluir = estabelecimentosFiltrados.get(menuInfo.position);
+        Intent intent = new Intent(this, CadastroEstabelecimentoActivity.class);
+        intent.putExtra("estabelecimento", estabelecimentoExcluir);
 
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Atenção")
-                .setMessage("Realmente deseja excluir o estabelecimento?")
-                .setNegativeButton("NÃO", null)
-                .setPositiveButton("SIM", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        estabelecimentosFiltrados.remove(estabelecimentoExcluir);
-                        estabelecimentos.remove(estabelecimentoExcluir);
-                        estabelecimentoDao.excluir(estabelecimentoExcluir);
-                        listView.invalidateViews();
-                    }
-                }).create();
-        dialog.show();
+        startActivity(intent);
     }
 
-    public void atualizar(MenuItem item){
+
+    public void atualizar(MenuItem item) {
         AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
 
         final Estabelecimento estabelecimentoAtualizar = estabelecimentosFiltrados.get(menuInfo.position);
         Intent intent = new Intent(this, CadastroEstabelecimentoActivity.class);
         intent.putExtra("estabelecimento", estabelecimentoAtualizar);
+
         startActivity(intent);
     }
 
-    public void pesquisaEstabelecimento(String nome){
+    public void pesquisaEstabelecimento(String nome) {
         estabelecimentosFiltrados.clear();
-        for(Estabelecimento estabelecimento : estabelecimentos){
-            if(estabelecimento.getNome().toLowerCase().contains(nome.toLowerCase())){
+        for (Estabelecimento estabelecimento : estabelecimentos) {
+            if (estabelecimento.getNome().toLowerCase().contains(nome.toLowerCase())) {
                 estabelecimentosFiltrados.add(estabelecimento);
             }
         }
-        listView.invalidateViews();
-    }
-
-    @Override
-    public void onResume(){
-        super.onResume();
-        estabelecimentos = estabelecimentoDao.listarEstabelecimentos();
-        estabelecimentosFiltrados.clear();
-        estabelecimentosFiltrados.addAll(estabelecimentos);
         listView.invalidateViews();
     }
 }

@@ -1,19 +1,26 @@
 package com.example.appcervejaproject.model;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.io.Serializable;
 
 public class Cesta implements Serializable {
 
-    private Integer id_cesta;
+    @SerializedName("id")
+    private int id;
+
+    @SerializedName("nome")
     private String nome;
+
+    @SerializedName("data")
     private String data;
 
-    public Integer getId_cesta(){
-        return this.id_cesta;
+    public int getId_cesta(){
+        return this.id;
     }
 
-    public void setId_cesta(Integer id_cesta){
-        this.id_cesta = id_cesta;
+    public void setId_cesta(int id){
+        this.id = id;
     }
 
     public String getNome(){

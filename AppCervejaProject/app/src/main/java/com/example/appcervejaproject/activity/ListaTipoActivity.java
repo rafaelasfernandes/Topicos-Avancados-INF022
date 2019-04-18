@@ -1,35 +1,38 @@
 package com.example.appcervejaproject.activity;
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
+
 import android.widget.ListView;
 import android.widget.SearchView;
 
-import com.example.appcervejaproject.DAO.TipoDAO;
 import com.example.appcervejaproject.R;
 import com.example.appcervejaproject.adapter.TipoAdapter;
 import com.example.appcervejaproject.model.Tipo;
+import com.example.appcervejaproject.rest.ServiceGenerator;
+import com.example.appcervejaproject.rest.TipoService;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 
 public class ListaTipoActivity extends AppCompatActivity {
 
     private ListView listView;
-    private TipoDAO tipoDao;
     private List<Tipo> tipos;
     private List<Tipo> tiposFiltrados = new ArrayList<>();
 
@@ -45,12 +48,25 @@ public class ListaTipoActivity extends AppCompatActivity {
         getSupportActionBar().setTitle(" Lista de Tipos");
 
         listView = findViewById(R.id.listview_Tipo);
-        tipoDao = new TipoDAO(this);
-        tipos = tipoDao.listarTipos();
-        tiposFiltrados.addAll(tipos);
 
-        TipoAdapter adaptador = new TipoAdapter(this, tiposFiltrados);
-        listView.setAdapter(adaptador);
+        TipoService tipoService = ServiceGenerator.createService(TipoService.class);
+        Call<List<Tipo>> call = tipoService.getTipos();
+
+        call.enqueue(new Callback<List<Tipo>>() {
+            @Override
+            public void onResponse(Call<List<Tipo>> call, Response<List<Tipo>> response) {
+                if(response.isSuccessful()){
+                    tiposFiltrados = response.body();
+                    TipoAdapter adaptador = new TipoAdapter(ListaTipoActivity.this, tiposFiltrados);
+                    listView.setAdapter(adaptador);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Tipo>> call, Throwable t) {
+                Log.e("ERRO ", t.getMessage());
+            }
+        });
 
         registerForContextMenu(listView);
 
@@ -99,29 +115,21 @@ public class ListaTipoActivity extends AppCompatActivity {
 
     public void excluirTipo(MenuItem item){
         AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-        final Tipo tipoExcluir = tiposFiltrados.get(menuInfo.position);
 
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Atenção")
-                .setMessage("Realmente deseja excluir o tipo?")
-                .setNegativeButton("NÃO", null)
-                .setPositiveButton("SIM", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        tiposFiltrados.remove(tipoExcluir);
-                        tipos.remove(tipoExcluir);
-                        tipoDao.excluir(tipoExcluir);
-                        listView.invalidateViews();
-                    }
-                }).create();
-        dialog.show();
+        final Tipo tipoExcluir = tiposFiltrados.get(menuInfo.position);
+        Intent intent = new Intent(this, CadastroTipoActivity.class);
+        intent.putExtra("tipo", tipoExcluir);
+
+        startActivity(intent);
     }
 
     public void atualizarTipo(MenuItem item){
         AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+
         final Tipo tipoAtualizar = tiposFiltrados.get(menuInfo.position);
         Intent intent = new Intent(this, CadastroTipoActivity.class);
         intent.putExtra("tipo", tipoAtualizar);
+
         startActivity(intent);
     }
 
@@ -132,15 +140,6 @@ public class ListaTipoActivity extends AppCompatActivity {
                 tiposFiltrados.add(tipo);
             }
         }
-        listView.invalidateViews();
-    }
-
-    @Override
-    public void onResume(){
-        super.onResume();
-        tipos = tipoDao.listarTipos();
-        tiposFiltrados.clear();
-        tiposFiltrados.addAll(tipos);
         listView.invalidateViews();
     }
 }

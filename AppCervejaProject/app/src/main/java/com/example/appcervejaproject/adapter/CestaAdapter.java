@@ -33,12 +33,14 @@ public class CestaAdapter extends BaseAdapter {
 
     @Override
     public long getItemId(int position) {
-        return cestas.get(position).getId_cesta();
+        return position;
     }
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
+
         View view = activity.getLayoutInflater().inflate(R.layout.item_lista_cesta, parent, false);
+
         TextView nome = view.findViewById(R.id.text_Nome);
         TextView data = view.findViewById(R.id.text_Data);
 

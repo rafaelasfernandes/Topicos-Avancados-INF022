@@ -33,7 +33,7 @@ public class TipoAdapter extends BaseAdapter {
 
     @Override
     public long getItemId(int position) {
-        return tipos.get(position).getId_tipo();
+        return position;
     }
 
     @Override

@@ -4,15 +4,15 @@ import java.io.Serializable;
 
 public class Estabelecimento implements Serializable {
 
-    private Integer id_estabelecimento;
+    private Integer id;
     private String nome;
 
     public Integer getId_estabelecimento(){
-        return this.id_estabelecimento;
+        return this.id;
     }
 
-    public void setId_estabelecimento(Integer id_estabelecimento){
-        this.id_estabelecimento = id_estabelecimento;
+    public void setId_estabelecimento(Integer id){
+        this.id = id;
     }
 
     public String getNome(){

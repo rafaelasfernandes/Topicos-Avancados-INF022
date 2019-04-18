@@ -1,34 +1,36 @@
 package com.example.appcervejaproject.activity;
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.SearchView;
 
-import com.example.appcervejaproject.DAO.MarcaDAO;
 import com.example.appcervejaproject.R;
 import com.example.appcervejaproject.adapter.MarcaAdapter;
 import com.example.appcervejaproject.model.Marca;
+import com.example.appcervejaproject.rest.MarcaService;
+import com.example.appcervejaproject.rest.ServiceGenerator;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class ListaMarcaActivity extends AppCompatActivity {
 
     private ListView listView;
-    private MarcaDAO marcaDao;
     private List<Marca> marcas;
     private List<Marca> marcasFiltradas = new ArrayList<>();
 
@@ -44,12 +46,25 @@ public class ListaMarcaActivity extends AppCompatActivity {
         getSupportActionBar().setTitle(" Lista de Marcas");
 
         listView = findViewById(R.id.listview_Marca);
-        marcaDao = new MarcaDAO(this);
-        marcas = marcaDao.listarMarcas();
-        marcasFiltradas.addAll(marcas);
 
-        MarcaAdapter adaptador = new MarcaAdapter(this, marcasFiltradas);
-        listView.setAdapter(adaptador);
+        MarcaService marcaService = ServiceGenerator.createService(MarcaService.class);
+        Call<List<Marca>> call = marcaService.getMarcas();
+
+        call.enqueue(new Callback<List<Marca>>() {
+            @Override
+            public void onResponse(Call<List<Marca>> call, Response<List<Marca>> response) {
+                if(response.isSuccessful()){
+                    marcasFiltradas = response.body();
+                    MarcaAdapter adaptador = new MarcaAdapter(ListaMarcaActivity.this, marcasFiltradas);
+                    listView.setAdapter(adaptador);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Marca>> call, Throwable t) {
+                Log.e("ERROR ", t.getMessage());
+            }
+        });
 
         registerForContextMenu(listView);
 
@@ -98,29 +113,22 @@ public class ListaMarcaActivity extends AppCompatActivity {
 
     public void excluir(MenuItem item){
         AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-        final Marca marcaExcluir = marcasFiltradas.get(menuInfo.position);
 
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Atenção")
-                .setMessage("Realmente deseja excluir a marca?")
-                .setNegativeButton("NÃO", null)
-                .setPositiveButton("SIM", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        marcasFiltradas.remove(marcaExcluir);
-                        marcas.remove(marcaExcluir);
-                        marcaDao.excluir(marcaExcluir);
-                        listView.invalidateViews();
-                    }
-                }).create();
-        dialog.show();
+        final Marca marcaExcluir = marcasFiltradas.get(menuInfo.position);
+        Intent intent = new Intent(this, CadastroMarcaActivity.class);
+        intent.putExtra("marca", marcaExcluir);
+
+        startActivity(intent);
+
     }
 
     public void atualizar(MenuItem item){
         AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+
         final Marca marcaAtualizar = marcasFiltradas.get(menuInfo.position);
         Intent intent = new Intent(this, CadastroMarcaActivity.class);
         intent.putExtra("marca", marcaAtualizar);
+
         startActivity(intent);
     }
 
@@ -131,15 +139,6 @@ public class ListaMarcaActivity extends AppCompatActivity {
                 marcasFiltradas.add(marca);
             }
         }
-        listView.invalidateViews();
-    }
-
-    @Override
-    public void onResume(){
-        super.onResume();
-        marcas = marcaDao.listarMarcas();
-        marcasFiltradas.clear();
-        marcasFiltradas.addAll(marcas);
         listView.invalidateViews();
     }
 }

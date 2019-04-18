@@ -1,12 +1,12 @@
 package com.example.appcervejaproject.activity;
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v7.app.AlertDialog;
+
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -16,20 +16,26 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SearchView;
 
-import com.example.appcervejaproject.DAO.CestaDAO;
 import com.example.appcervejaproject.R;
 import com.example.appcervejaproject.adapter.CestaAdapter;
 import com.example.appcervejaproject.model.Cesta;
+import com.example.appcervejaproject.rest.CestaService;
+import com.example.appcervejaproject.rest.ServiceGenerator;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+
 public class ListaCestaActivity extends AppCompatActivity {
 
     private ListView listView;
-    private CestaDAO cestaDao;
     private List<Cesta> cestas; /*lista de cestas cadastradas*/
     private List<Cesta> cestasFiltradas = new ArrayList<>(); /*listas de cestas consultadas*/
+    private CestaService cestaService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,12 +45,25 @@ public class ListaCestaActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         listView = findViewById(R.id.listview_Cestas); /*vincula o xml com os atributos do java*/
-        cestaDao = new CestaDAO(this);
-        cestas = cestaDao.listarCestas();  /*todos os alunos*/
-        cestasFiltradas.addAll(cestas); /*so os alunos que foram consultados*/
 
-        CestaAdapter adaptador = new CestaAdapter(this, cestasFiltradas);
-        listView.setAdapter(adaptador);
+        cestaService = ServiceGenerator.createService(CestaService.class);
+        Call<List<Cesta>> call = cestaService.getCestas();
+
+        call.enqueue(new Callback<List<Cesta>>() {
+            @Override
+            public void onResponse(Call<List<Cesta>> call, Response<List<Cesta>> response) {
+                if(response.isSuccessful()) {
+                    cestasFiltradas = response.body();
+                    CestaAdapter adapter = new CestaAdapter(ListaCestaActivity.this, cestasFiltradas);
+                    listView.setAdapter(adapter);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Cesta>> call, Throwable t) {
+                Log.e("ERROR ", t.getMessage());
+            }
+        });
 
         registerForContextMenu(listView); /*quando o listview for pressionado, ele abre o menu de contexto*/
 
@@ -58,8 +77,9 @@ public class ListaCestaActivity extends AppCompatActivity {
         });
     }
 
+
     /*exibir o menu */
-    public boolean onCreateOptionsMenu(Menu menu){
+     public boolean onCreateOptionsMenu(Menu menu){
         MenuInflater menuInflater = getMenuInflater();
         menuInflater.inflate(R.menu.menu_principal_cesta, menu);
 
@@ -102,31 +122,22 @@ public class ListaCestaActivity extends AppCompatActivity {
 
     public void excluir(MenuItem item){
         AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-        final Cesta cestaExcluir = cestasFiltradas.get(menuInfo.position); /*posicao do item na lista*/
 
-        /*exibe uma msg de confirmação*/
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Atenção")
-                .setMessage("Realmente deseja excluir a cesta?")
-                .setNegativeButton("Não", null)
-                .setPositiveButton("Sim", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        cestasFiltradas.remove(cestaExcluir);
-                        cestas.remove(cestaExcluir);
-                        cestaDao.excluir(cestaExcluir);
-                        listView.invalidateViews();
-                    }
-                }).create();
-        dialog.show();
+        final Cesta cestaExcluir = cestasFiltradas.get(menuInfo.position);
+        Intent intent = new Intent(this, CadastroCestaActivity.class);
+        intent.putExtra("cesta", cestaExcluir);
+
+        startActivity(intent);
     }
+
 
     public void atualizar(MenuItem item){
         AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-        final Cesta cestaAtualizar = cestasFiltradas.get(menuInfo.position); /*posicao do item na lista*/
 
-        Intent intent = new Intent(ListaCestaActivity.this, CadastroCestaActivity.class);
+        final Cesta cestaAtualizar = cestasFiltradas.get(menuInfo.position);
+        Intent intent = new Intent(this, CadastroCestaActivity.class);
         intent.putExtra("cesta", cestaAtualizar);
+
         startActivity(intent);
     }
 
@@ -144,14 +155,5 @@ public class ListaCestaActivity extends AppCompatActivity {
             }
         }
         listView.invalidateViews();
-    }
-
-    @Override
-    public void onResume(){
-        super.onResume();
-        cestas = cestaDao.listarCestas();
-        cestasFiltradas.clear();
-        cestasFiltradas.addAll(cestas);
-        listView.invalidateViews(); /*invalida os dados antigos do listview*/
     }
 }
